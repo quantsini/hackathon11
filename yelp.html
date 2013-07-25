@@ -36,12 +36,17 @@
 				return u;
 			}
 			float lettere(vec2 p) {
-				float u,v;
+				float u,v,w;
 				u = lspd(vec2(0.066,0.31),vec2(0.258,0.31),p)-lw*0.8;
+				u = min(u,lspd(vec2(0.204,0.225),vec2(0.22,0.237),p)-lw*0.86);
 				v = length(vec2(0.1625,0.31)-p)-0.12;
 				v = max(v,-length(vec2(0.1625,0.31)-p)+0.07);
 				v = max(v,-(p.y-0.31));
-				return min(u,v);
+				w = length(vec2(0.1625,0.31)-p)-0.12;
+				w = max(w,-length(vec2(0.1625,0.31)-p)+0.07);
+				w = max(w,(p.y-0.31));
+				w = max(w,(p.x-0.21));
+				return min(min(u,v),w);
 			}
 			float letterl(vec2 p) {
 				return lspd(vec2(0.377,0.51),vec2(0.377,0.205),p)-lw;
