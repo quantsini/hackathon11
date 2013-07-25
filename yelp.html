@@ -24,13 +24,14 @@
 				return distance(p, v+t*(w-v));
 			}
 			float text(vec2 pp) {
-				float u, v, w, x; vec2 p;
+				float u, v, w, x, y; vec2 p;
 				p = pp - vec2(0.0, 0.0);
 				w = lspd(vec2(-0.205,0.41),vec2(-0.105,0.205),p) - 0.03;
 				v = lspd(vec2(-0.035,0.41),vec2(-0.105,0.205),p) - 0.03;
 				x = lspd(vec2(0.377,0.51),vec2(0.377,0.205),p) - 0.03;
+				y = lspd(vec2(0.072,0.31),vec2(0.252,0.31),p) - 0.03;
 				u = lspd(vec2(0.52,0.11),vec2(0.52,0.43),p) - 0.03;
-				u = min(min(min(v,w),x),u);
+				u = min(min(min(min(v,w),x),u),y);
 				return u;
 			}
 			float aa(float v){return smoothstep(1.5/iResolution.y,0.0,v);}
