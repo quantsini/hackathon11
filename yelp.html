@@ -24,20 +24,46 @@
 				else if (t>1.0) return distance(p,w);
 				return distance(p, v+t*(w-v));
 			}
-			float text(vec2 p) {
+			float lettery(vec2 p) {
 				float u;
 				u = lspd(vec2(-0.205,0.41),vec2(-0.105,0.205),p)-lw;
 				u = min(u,lspd(vec2(-0.035,0.41),vec2(-0.105,0.205),p)-lw);
-				u = min(u,lspd(vec2(0.377,0.51),vec2(0.377,0.205),p)-lw);
-				u = min(u,lspd(vec2(0.072,0.31),vec2(0.252,0.31),p)-lw);
-				u = min(u,lspd(vec2(0.52,0.11),vec2(0.52,0.43),p)-lw);
+				u = min(u,lspd(vec2(-0.105,0.205),vec2(-0.113,0.151),p)-lw);
+				u = min(u,lspd(vec2(-0.113,0.151),vec2(-0.125,0.135),p)-lw);
+				u = min(u,lspd(vec2(-0.134,0.128),vec2(-0.125,0.135),p)-lw);
+				u = min(u,lspd(vec2(-0.145,0.119),vec2(-0.134,0.128),p)-lw);
+				u = min(u,lspd(vec2(-0.175,0.119),vec2(-0.145,0.119),p)-lw);
+				return u;
+			}
+			float lettere(vec2 p) {
+				float u;
+				u = lspd(vec2(0.072,0.31),vec2(0.252,0.31),p)-lw;
+				return u;
+			}
+			float letterl(vec2 p) {
+				return lspd(vec2(0.377,0.51),vec2(0.377,0.205),p)-lw;
+			}
+			float letterp(vec2 p) {
+				float u;
+				u = lspd(vec2(0.52,0.11),vec2(0.52,0.43),p)-lw;
+				u = min(u,lspd(vec2(0.62,0.37),vec2(0.62,0.27),p)-0.09);
+				u = max(u,-lspd(vec2(0.63,0.35),vec2(0.63,0.29),p)+0.05);
 				return u;
 			}
 			float aa(float v){return smoothstep(1.5/iResolution.y,0.0,v);}
 			void yelp(inout vec3 col, vec2 uv) {
-				float v = text(uv - vec2(0.0, 0.0));
-				col = mix(col, cStroke, aa(v - strokeW));
-				col = mix(col, cYelp, aa(v));
+				float y = lettery(uv);
+				float e = lettere(uv);
+				float l = letterl(uv);
+				float p = letterp(uv);
+				col = mix(col, cStroke, aa(y - strokeW));
+				col = mix(col, cStroke, aa(e - strokeW));
+				col = mix(col, cStroke, aa(l - strokeW));
+				col = mix(col, cStroke, aa(p - strokeW));
+				col = mix(col, cYelp, aa(y));
+				col = mix(col, cYelp, aa(e));
+				col = mix(col, cYelp, aa(l));
+				col = mix(col, cYelp, aa(p));
 			}
 			void main(void) {
 				vec2 uv = gl_FragCoord.xy / iResolution.y;
