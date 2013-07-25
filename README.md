@@ -13,6 +13,7 @@ Install the necessary Debian packages:
 
 Install the necessary Haskell packages:
 
+    cabal update
     cabal install language-ecmascript language-glsl shake
 
 Download and unpack the Google Closure Compiler:
