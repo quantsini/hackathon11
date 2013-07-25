@@ -25,4 +25,4 @@ Download and unpack the Google Closure Compiler:
 
 Compile:
 
-    ghc --make shake -outputdir build && ./shake
+    make

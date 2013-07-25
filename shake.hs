@@ -55,11 +55,8 @@ minifiedAssetName f
 rewrittenJSName f = "build/rewritten/" ++ f
 
 main = shakeArgs shakeOptions $ do
-    "build/y.clean.png" *> \out -> do
-        let in_ = "build/y.unopt.png"
-        need [in_]
-        silentCommand "pngcp" [in_, out]
-        showSize out
+    phony "clean" $ do
+        removeFilesAfter "build" ["//*"]
 
     "build/y.png" *> \out -> do
         let in_ = "build/y.clean.png"
@@ -67,6 +64,12 @@ main = shakeArgs shakeOptions $ do
         exists <- liftIO $ doesFileExist out
         when exists $ liftIO $ removeFile out
         silentCommand "optipng" ["-out", out, in_]
+        showSize out
+
+    "build/y.clean.png" *> \out -> do
+        let in_ = "build/y.unopt.png"
+        need [in_]
+        silentCommand "pngcp" [in_, out]
         showSize out
 
     "build/y.unopt.png" *> \out -> do
