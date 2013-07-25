@@ -1,0 +1,4 @@
+shake
+.shake.database
+/build/
+/deps/
