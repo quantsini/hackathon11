@@ -77,11 +77,10 @@ main = shakeArgs shakeOptions $ do
         let in_ = "build/y.dat"
         need [in_]
         size <- getFileSize in_
-        let padding = (pngChannelCount - size) `mod` pngChannelCount
-        silentCommand "dd" ["if=" ++ in_, "of=" ++ out]
-        when (padding /= 0) $ silentCommand "dd"
-            ["if=/dev/zero", "of=" ++ out, "bs=" ++ show padding, "count=1",
-            "conv=notrunc", "oflag=append"]
+        let pixelCount = (size + pngChannelCount - 1) `div` pngChannelCount
+        silentCommand "dd"
+            ["if=" ++ in_, "of=" ++ out, "bs=" ++ show (pngChannelCount),
+            "count=" ++ show pixelCount, "conv=sync"]
 
     "build/y.dat" *> \out -> do
         ins <- loadMainAssetList
