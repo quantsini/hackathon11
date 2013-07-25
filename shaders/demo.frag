@@ -25,34 +25,25 @@ float lspd(vec2 v, vec2 w, vec2 p) {
     return distance(p, v+t*(w-v));
 }
 
-float burst(vec2 pp, vec2 center, vec2 outer, float smallr) {
-    vec2 c_p = pp - center; // center to pixel point
-    vec2 c_o = outer - center; // center to outer
-
-    // This section defines a segement of a circle
-    float dp = dot(normalize(c_p), normalize(c_o)); // dot product normalized vectors
-    float w = dplimit - dp; // place limit on how much dot product can move away from 1.0
-    float ww = length(c_p) - length(c_o);
-    
-    // This section deals with smoothing the inner point
-    vec2 smallcirccenter = center + ((smallr / sinlimit) * normalize(c_o));
-    float www = length(pp - smallcirccenter) - smallr;
-    float wwww = min(dot(smallcirccenter-pp, c_o), www);
-    
-    // This section deals with smoothing the outer points
-    float wwwww = (length(c_p) + length(c_p - c_o)) - 1.25 * length(c_o);
-    
-    return max(max(max(w, ww), wwww), wwwww);
-}
-
 float burstn(vec2 p) {
     float u;
     p.x += 0.11;
-    u = length(p)-0.04;
-    u = min(u,lspd(vec2(0,0),vec2(-0.12,-0.037),p)-0.04);
-    u = min(u,lspd(vec2(0,0),vec2(-0.12,+0.037),p)-0.04);
-    u = min(u,lspd(vec2(-0.08,0),vec2(-0.5,0),p)-0.03);
-    u = max(u,length(vec2(0.07,0)-p)-0.23);
+    u = lspd(vec2(0.03,0),vec2(-0.08,-0.03),p)-0.02;
+    u = min(u,lspd(vec2(0.03,0),vec2(-0.08,0.03),p)-0.02);
+    u = min(u,lspd(vec2(-0.04,0),vec2(-0.5,0),p)-0.01);
+    u = min(u,lspd(vec2(-0.082,-0.03),vec2(-0.082,0.03),p)-0.02);
+    u = max(u,length(vec2(0.07,0)-p)-0.172);
+    return u;
+}
+
+float burstb(vec2 p) {
+    float u;
+    p.x += 0.11;
+    u = lspd(vec2(0.03,0),vec2(-0.24,-0.06),p)-0.02;
+    u = min(u,lspd(vec2(0.03,0),vec2(-0.24,0.06),p)-0.02);
+    u = min(u,lspd(vec2(-0.08,0),vec2(-0.42,0.04),p)-0.03);
+    u = min(u,lspd(vec2(-0.08,0),vec2(-0.42,-0.04),p)-0.03);
+    u = max(u,length(vec2(0.07,0)-p)-0.33);
     return u;
 }
 
@@ -105,13 +96,14 @@ void yelp(inout vec3 col, vec2 uv) {
     col = mix(col, cYelp, aa(e));
     col = mix(col, cYelp, aa(l));
     col = mix(col, cYelp, aa(p));
-    vec2 center = vec2(1.05, 0.403);
-    float init = 0.0;
-    v = burstn(rotate(uv-center,init));
+    vec2 center = vec2(1.00, 0.37);
+    float init = 1.3;
+    v = burstb(rotate(uv-center,init));
     for(int i=1; i<=4; i++) {
         v = min(v, burstn(rotate(uv-center, rotateStep*float(i)+init)));
     }
     col = mix(col, cStroke, aa(v - strokeW));
+    col = mix(col, cStroke, aa(length(uv-center)-0.1));
     col = mix(col, cBurst, aa(v));
 }
 void main(void) {
