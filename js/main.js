@@ -73,8 +73,8 @@ function compile() {
     if (!gl) { return; }
     
     var program = gl.createProgram();
-    var fragment = document.getElementById( 'example' ).textContent;
-    var vertex = document.getElementById( 'vertexShader' ).textContent;
+    var fragment = getAsset("shaders/demo.frag");
+    var vertex = getAsset("shaders/demo.vert");
 
     var vs = createShader( vertex, gl.VERTEX_SHADER );
     var fs = createShader( fragment, gl.FRAGMENT_SHADER );
