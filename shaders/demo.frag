@@ -84,26 +84,27 @@ float letterp(vec2 p) {
 float aa(float v){return smoothstep(1.5/iResolution.y,0.0,v);}
 void yelp(inout vec3 col, vec2 uv) {
     float y,e,l,p,v;
-    y = lettery(uv);
-    e = lettere(uv);
-    l = letterl(uv);
-    p = letterp(uv);
-    col = mix(col, cStroke, aa(y - strokeW));
-    col = mix(col, cStroke, aa(e - strokeW));
-    col = mix(col, cStroke, aa(l - strokeW));
-    col = mix(col, cStroke, aa(p - strokeW));
-    col = mix(col, cYelp, aa(y));
-    col = mix(col, cYelp, aa(e));
-    col = mix(col, cYelp, aa(l));
-    col = mix(col, cYelp, aa(p));
     vec2 center = vec2(1.00, 0.37);
-    float init = 1.3;
+    float T = iGlobalTime*2.0;
+    float init = 1.3 +  0.5 * sin(T);
+    y = lettery(uv-vec2(0,0.2*max(0.0,sin(T))));
+    e = lettere(uv-vec2(0,0.2*max(0.0,sin(T+0.4))));
+    l = letterl(uv-vec2(0,0.2*max(0.0,sin(T+0.7))));
+    p = letterp(uv-vec2(0,0.2*max(0.0,sin(T+1.3))));
     v = burstb(rotate(uv-center,init));
     for(int i=1; i<=4; i++) {
         v = min(v, burstn(rotate(uv-center, rotateStep*float(i)+init)));
     }
+    col = mix(col, cStroke, aa(y - strokeW));
+    col = mix(col, cStroke, aa(e - strokeW));
+    col = mix(col, cStroke, aa(l - strokeW));
+    col = mix(col, cStroke, aa(p - strokeW));
     col = mix(col, cStroke, aa(v - strokeW));
     col = mix(col, cStroke, aa(length(uv-center)-0.1));
+    col = mix(col, cYelp, aa(y));
+    col = mix(col, cYelp, aa(e));
+    col = mix(col, cYelp, aa(l));
+    col = mix(col, cYelp, aa(p));
     col = mix(col, cBurst, aa(v));
 }
 void main(void) {
