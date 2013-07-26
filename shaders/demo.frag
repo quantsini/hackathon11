@@ -6,9 +6,9 @@ uniform float iGlobalTime; // shader playback time (in seconds)
 uniform vec3 iResolution;
 
 #define rS 1.25663706144
-vec3 cS = vec3(1,1,1);
-vec3 cY = vec3(0,0,0);
-vec3 cB = vec3(0.76,0.07,0);
+vec4 cS = vec4(1,1,1,1);
+vec4 cY = vec4(0,0,0,1);
+vec4 cB = vec4(0.76,0.07,0,1);
 float sW = 0.05;
 float lw = 0.03;
 vec2 r(vec2 p, float a) {
@@ -80,7 +80,7 @@ float letterp(vec2 p) {
     return u;
 }
 float aa(float v){return smoothstep(1.5/iResolution.y,0.0,v);}
-void yelp(inout vec3 col, vec2 uv) {
+void yelp(inout vec4 col, vec2 uv) {
     float y,e,l,p,v;
     vec2 center = vec2(1.00, 0.37);
     float T = iGlobalTime*2.0;
@@ -110,7 +110,7 @@ void main(void) {
     float ratio = iResolution.x / iResolution.y;
     uv.x += 0.5 - ratio / 2.0;
     uv.y -= 0.07;
-    vec3 col = mix(vec3(0.391,0.07,0.0), vec3(0.844,0.07,0.0), 1.0 - uv.x * 0.6);
+    vec4 col = vec4(0.0,0.0,0.0,0.0);
     yelp(col, uv);
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = col;
 }
