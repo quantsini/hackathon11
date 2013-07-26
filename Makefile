@@ -4,6 +4,12 @@ yelp.html: shake ALWAYS_REBUILD
 build/%.png: shake ALWAYS_REBUILD
 	./shake --color $@
 
+build/%.js: shake ALWAYS_REBUILD
+	./shake --color $@
+
+build/%.html: shake ALWAYS_REBUILD
+	./shake --color $@
+
 clean: shake
 	./shake clean
 	rm -f shake

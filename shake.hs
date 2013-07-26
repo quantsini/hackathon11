@@ -54,9 +54,56 @@ minifiedAssetName f
 
 rewrittenJSName f = "build/rewritten/" ++ f
 
+minifyJavascript in_ out = do
+    need [in_]
+    silentCommand "java"
+        ["-jar", "deps/compiler.jar", "--js_output_file", out, "--js", in_]
+
+replace _ _ [] = []
+replace old new str
+  | old `isPrefixOf` str = new ++ replace old new (drop (length old) str)
+  | otherwise = head str : replace old new (tail str)
+
 main = shakeArgs shakeOptions $ do
     phony "clean" $ do
         removeFilesAfter "build" ["//*"]
+
+    want ["yelp.html", "y.png"]
+
+    "yelp.html" *> \out -> do
+        need ["y.png"]
+        copyFile' ("build/" ++ out) out
+
+    "y.png" *> \out -> do
+        copyFile' ("build/" ++ out) out
+
+    "build/yelp.html" *> \out -> do
+        let jsFile = "build/loader.min.js"
+            htmlFile = "html/loader.html"
+        htmlContent <- readFile' htmlFile
+        jsContent <- readFile' jsFile
+        let htmlContent' = replace "__JS__" jsContent htmlContent
+        writeFile' out htmlContent'
+
+    "build/*.min.js" *> \out -> do
+        let base = dropDirectory1 $ dropExtensions $ out
+            in_ = "build/" ++ base ++ ".js"
+        minifyJavascript in_ out
+
+    "build/loader.js" *> \out -> do
+        let in_ = "js/loader.js"
+        jsContent <- readFile' in_
+        blobSize <- getFileSize "build/y.padded.dat" :: Action Int
+        scriptSize <- getFileSize $ "build/code.min.js" :: Action Int
+        let jsContent' =
+                replace "__BLOBSIZE__" (show blobSize) $
+                replace "__SCRIPTSIZE__" (show scriptSize) $ jsContent
+        writeFile' out jsContent'
+
+    "build/code.js" *> \out -> do
+        getAssetCode <- readFile' "js/getasset-packed.js"
+        mainCode <- readFile' $ rewrittenJSName "js/main.js"
+        writeFile' out $ getAssetCode ++ mainCode
 
     "build/y.png" *> \out -> do
         let in_ = "build/y.unopt.png"
@@ -84,7 +131,7 @@ main = shakeArgs shakeOptions $ do
 
     "build/y.dat" *> \out -> do
         ins <- loadMainAssetList
-        let ins' = map minifiedAssetName $ mainJSFile : ins
+        let ins' = "build/code.min.js" : map minifiedAssetName ins
         need ins'
         silentCommand "python" $ ["packer.py", out] ++ ins'
         showSize out
@@ -106,14 +153,14 @@ main = shakeArgs shakeOptions $ do
 
     minifiedAssetName "/*.js" *> \out -> do
         let in_ = rewrittenJSName $ dropDirectories 2 $ out
-        need [in_]
-        silentCommand "java"
-            ["-jar", "deps/compiler.jar", "--js_output_file", out, "--js", in_]
+        minifyJavascript in_ out
 
     map minifiedAssetName ["/*.glsl", "/*.vert", "/*.frag"] **> \out -> do
         let in_ = dropDirectories 2 $ out
         need [in_]
-        copyFile' in_ out
+        content <- readFile' in_
+        writeFile' out $ smash content
+        --copyFile' in_ out
         --silentCommand "mono"
             --["deps/shader_minifier.exe", "--preserve-externals", "-o", out, in_]
 
@@ -126,3 +173,13 @@ main = shakeArgs shakeOptions $ do
         code <- liftIO $ parseFromFile in_
         let code' = rewriteLoadedAssets assetMap code
         writeFile' out $ show . prettyPrint $ code'
+
+smash xs = eatSpaces $ eatNewlines $ xs
+  where
+    eatNewlines = filter (/= '\n')
+
+    eatSpaces (a:' ':c:xs)
+      | not (isIdent a) || not (isIdent c) = eatSpaces (a:c:xs)
+      where isIdent c = isAlphaNum c || c == '_';
+    eatSpaces (x:xs) = x : smash xs
+    eatSpaces [] = []
