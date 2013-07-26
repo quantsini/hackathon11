@@ -45,6 +45,8 @@ function init() {
 	sectionTimings.push(5.0);
     shaderPrograms.push(compileProg(getAsset("shaders/ticktock.frag"), demo_vertex));
 	sectionTimings.push(10.0);
+    shaderPrograms.push(compileProg(getAsset("shaders/stars.frag"), demo_vertex));
+	sectionTimings.push(20.0);
 
     loadingProgram = compileProg(getAsset("shaders/loading.frag"), demo_vertex);
 
