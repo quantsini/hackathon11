@@ -42,13 +42,13 @@ function init() {
     var demo_vertex = getAsset("shaders/demo.vert");
 
     shaderPrograms.push(compileProg(getAsset("shaders/demo.frag"), demo_vertex));
-	sectionTimings.push(15.0);
+	sectionTimings.push(12.0);
     shaderPrograms.push(compileProg(getAsset("shaders/stars.frag"), demo_vertex));
-	sectionTimings.push(25.0);
+	sectionTimings.push(24.0);
     shaderPrograms.push(compileProg(getAsset("shaders/ticktock.frag"), demo_vertex));
-	sectionTimings.push(35.0);
+	sectionTimings.push(36.0);
     shaderPrograms.push(compileProg(getAsset("shaders/stars2.frag"), demo_vertex));
-	sectionTimings.push(50.0);
+	sectionTimings.push(48.0);
 
     loadingProgram = compileProg(getAsset("shaders/loading.frag"), demo_vertex);
 

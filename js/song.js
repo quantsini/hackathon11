@@ -1,7 +1,7 @@
     // Song data
     var song = {
       // Song length in seconds (how much data to generate)
-      songLen: 25.0,  // Tune this to fit your needs!
+      songLen: 24.0,  // Tune this to fit your needs!
 
       songData: [
         { // Instrument 0
