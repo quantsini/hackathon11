@@ -9,7 +9,7 @@ void main(void)
 {
 	vec3 col = vec3(0.,0.,0.);
 	vec2 uv = gl_FragCoord.xy / iResolution.xy;
-	if( (abs(uv.y - 0.5) < 0.1) && (uv.x < iGlobalTime))
+	if( (abs(uv.y - 0.5) < 0.1) && (uv.x * 1.2 - 0.1 < iGlobalTime))
 	{
 		col = vec3(uv,0.5+0.5*sin(iGlobalTime));
 	}
