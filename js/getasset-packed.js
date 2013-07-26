@@ -35,5 +35,9 @@ function getNum(a, b) {
 
 unpackAssets();
 
-document.body.style.margin = 0;
-document.body.style.padding = 0;
+with (document.body) {
+    style.margin = 0;
+    style.padding = 0;
+
+    firstChild.style.display = 'none';
+}
