@@ -42,7 +42,9 @@ function init() {
     }
 
     compile();
-    
+
+	//initMusic();
+
     document.addEventListener( 'mousemove', function ( event ) {
         parameters.mouseX = event.clientX / window.innerWidth;
         parameters.mouseY = 1 - event.clientY / window.innerHeight;
@@ -50,6 +52,17 @@ function init() {
 
     onWindowResize();
     window.addEventListener( 'resize', onWindowResize, false );
+}
+
+function initMusic() {
+	eval(getAsset("js/song.js"));
+	eval(getAsset("js/player.js"));
+	var songGen = new sonant();
+	for (var t = 0; t < 8; t++)
+		songGen.generate(t);
+	var audio = songGen.createAudio();
+	audio.loop = true;
+	audio.play();
 }
 
 function computeSurfaceCorners() {
