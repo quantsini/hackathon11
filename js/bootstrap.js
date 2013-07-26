@@ -57,6 +57,7 @@ with (document.body) {
     firstChild.style.display = 'none';
 }
 
-eval(getAsset('js/main.js'));
+//eval(getAsset('js/main.js'));
+eval(getAsset('js/stars.js'));
 
 })();
