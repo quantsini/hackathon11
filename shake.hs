@@ -81,6 +81,7 @@ main = shakeArgs shakeOptions $ do
         jsContent <- readFile' jsFile
         let htmlContent' = replace "__JS__" jsContent htmlContent
         writeFile' out htmlContent'
+        showSize out
 
     "build/*.min.js" *> \out -> do
         let base = dropDirectory1 $ dropExtensions $ out
@@ -94,6 +95,7 @@ main = shakeArgs shakeOptions $ do
         scriptSize <- getFileSize $ "build/code.min.js" :: Action Int
         let jsContent' =
                 replace "__BLOBSIZE__" (show blobSize) $
+                replace "__PNGWIDTH__" (show $ blobSize `div` pngChannelCount) $
                 replace "__SCRIPTSIZE__" (show scriptSize) $ jsContent
         writeFile' out jsContent'
 

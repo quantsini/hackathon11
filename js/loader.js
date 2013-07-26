@@ -1,19 +1,11 @@
-function extractScript(image) {
-    var width = __BLOBSIZE__ / 3;
-    var canvas = document.createElement('canvas');
-    canvas.width = width;
+c = document.createElement('canvas');
+w = c.width = __PNGWIDTH__;
+with(c.getContext('2d'))
+    drawImage(this, o='', i=0),
+    d = getImageData(0,0,w,1).data;
 
-    var context = canvas.getContext('2d');
-    context.drawImage(image, 0, 0);
-    d = context.getImageData(0,0,canvas.width,1).data;
-
-    var i = 0;
-    s = __SCRIPTSIZE__;
-    var code = '';
-    while (i < d.length) {
-        code += String.fromCharCode(d[i],d[i+1],d[i+2]);
-        i += 4;
-    }
-    image.width=0;
-    eval(code.substr(0,s));
+for (s=__SCRIPTSIZE__; o.length < s; ++i) {
+    o += i % 4 - 3 ? String.fromCharCode(d[i]) : '';
 }
+eval(o);
+
