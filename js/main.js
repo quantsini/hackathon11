@@ -11,10 +11,9 @@ if ( !window.requestAnimationFrame ) {
     } )();
 }
 
-var canvas, gl, buffer, currentProgram, vertexPosition,
+var canvas, gl, buffer, shaderPrograms = [], sectionTimings=[], currentSection=0, loadingProgram,
 parameters = { startTime: Date.now(), time: 0, mouseX: 0.5, mouseY: 0.5, screenWidth: 0, screenHeight: 0 },
-surface = { centerX: 0, centerY: 0, width: 1, height: 1, lastX: 0, lastY: 0 },
-frontTarget, backTarget, screenProgram, getWebGL, compileOnChangeCode = true;
+frontTarget, backTarget, screenProgram, getWebGL, loadingInProgress = true, loadingTime = 0.0, loadingPhase=0;
 
 init();
 if (gl) { animate(); }
@@ -36,14 +35,16 @@ function init() {
         buffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
         gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( [ - 1.0, - 1.0, 1.0, - 1.0, - 1.0, 1.0, 1.0, - 1.0, 1.0, 1.0, - 1.0, 1.0 ] ), gl.STATIC_DRAW );
-
-        // Create surface buffer (coordinates at screen corners)
-        surface.buffer = gl.createBuffer();
     }
 
-    compile();
+    var demo_vertex = getAsset("shaders/demo.vert");
 
-	//initMusic();
+    shaderPrograms.push(compileProg(getAsset("shaders/demo.frag"), demo_vertex));
+	sectionTimings.push(5.0);
+    shaderPrograms.push(compileProg(getAsset("shaders/ticktock.frag"), demo_vertex));
+	sectionTimings.push(10.0);
+
+    loadingProgram = compileProg(getAsset("shaders/loading.frag"), demo_vertex);
 
     document.addEventListener( 'mousemove', function ( event ) {
         parameters.mouseX = event.clientX / window.innerWidth;
@@ -54,40 +55,44 @@ function init() {
     window.addEventListener( 'resize', onWindowResize, false );
 }
 
-function initMusic() {
-	eval(getAsset("js/song.js"));
-	eval(getAsset("js/player.js"));
-	var songGen = new sonant();
-	for (var t = 0; t < 8; t++)
-		songGen.generate(t);
-	var audio = songGen.createAudio();
-	audio.loop = true;
-	audio.play();
+var songGen;
+
+function loadingFunction() {
+	switch(loadingPhase)
+	{
+		case 0: break; // do nothing
+		case 1:
+		{
+			eval(getAsset("js/song.js"));
+			eval(getAsset("js/player.js"));
+			songGen = new sonant();
+		}
+		break;
+		case 2: case 3: case 4: case 5:
+		case 6: case 7: case 8: case 9:
+		{
+			var t = loadingPhase - 2;
+			songGen.generate(t);
+			loadingTime = (t+1) / 8.0;
+		}
+		break;
+		case 10:
+		{
+			var audio = songGen.createAudio();
+			audio.loop = true;
+			audio.play();
+			parameters.startTime = Date.now();
+			loadingInProgress = false;
+		}
+		break;
+	}
+	loadingPhase++;	
 }
 
-function computeSurfaceCorners() {
-    if (gl) {
-        surface.width = surface.height * parameters.screenWidth / parameters.screenHeight;
-        
-        var halfWidth = surface.width * 0.5, halfHeight = surface.height * 0.5;
-        
-        gl.bindBuffer( gl.ARRAY_BUFFER, surface.buffer );
-        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( [
-            surface.centerX - halfWidth, surface.centerY - halfHeight,
-            surface.centerX + halfWidth, surface.centerY - halfHeight,
-            surface.centerX - halfWidth, surface.centerY + halfHeight,
-            surface.centerX + halfWidth, surface.centerY - halfHeight,
-            surface.centerX + halfWidth, surface.centerY + halfHeight,
-            surface.centerX - halfWidth, surface.centerY + halfHeight ] ), gl.STATIC_DRAW );
-    }
-}
-
-function compile() {
+function compileProg(fragment, vertex) {
     if (!gl) { return; }
     
     var program = gl.createProgram();
-    var fragment = getAsset("shaders/demo.frag");
-    var vertex = getAsset("shaders/demo.vert");
 
     var vs = createShader( vertex, gl.VERTEX_SHADER );
     var fs = createShader( fragment, gl.FRAGMENT_SHADER );
@@ -109,13 +114,6 @@ function compile() {
         return;
     }
 
-    if ( currentProgram ) {
-        gl.deleteProgram( currentProgram );
-        setURL( fragment );
-    }
-
-    currentProgram = program;
-
     // Cache uniforms
     program.uniformsCache = {};
     var uniformNames = ['iGlobalTime', 'mouse', 'iResolution']
@@ -126,8 +124,9 @@ function compile() {
     }
 
     // Set up buffers
-    vertexPosition = gl.getAttribLocation(currentProgram, "position");
-    gl.enableVertexAttribArray( vertexPosition );
+    program.vertexPosition = gl.getAttribLocation(program, "position");
+    
+    return program
 }
 
 function createShader( src, type ) {
@@ -157,36 +156,56 @@ function onWindowResize( event ) {
     parameters.screenWidth = canvas.width;
     parameters.screenHeight = canvas.height;
 
-    computeSurfaceCorners();
-
     if (gl) { gl.viewport( 0, 0, canvas.width, canvas.height );}
 }
 
 function animate() {
     requestAnimationFrame( animate );
     render();
+    if(loadingInProgress)
+    {
+    	loadingFunction();
+    }
 }
 
 function render() {
-    if ( !currentProgram ) return;
+	var program;
+	if(loadingInProgress)
+	{
+		program = loadingProgram;
+		parameters.time = 1000 * loadingTime;
+	}
+	else
+	{
+    	parameters.time = Date.now() - parameters.startTime;
+		if(parameters.time / 1000.0 > sectionTimings[currentSection])
+		{
+			currentSection++;
+			if(currentSection == sectionTimings.length)
+			{
+				// Loop the sections and reset time
+				currentSection = 0;
+				parameters.time = 0;
+				parameters.startTime = Date.now();
+			}
+		}
+		program = shaderPrograms[currentSection];
+	}
 
-    parameters.time = Date.now() - parameters.startTime;
+    if ( !program ) return;
 
     // Use our shader program
-    gl.useProgram( currentProgram );
+	gl.enableVertexAttribArray( program.vertexPosition );
+    gl.useProgram( program );
 
     // Update the uniforms
-    gl.uniform1f( currentProgram.uniformsCache[ 'iGlobalTime' ], parameters.time / 1000 );
-    gl.uniform2f( currentProgram.uniformsCache[ 'mouse' ], parameters.mouseX, parameters.mouseY );
-    gl.uniform3f( currentProgram.uniformsCache[ 'iResolution' ], parameters.screenWidth, parameters.screenHeight, 0 );
+    gl.uniform1f( program.uniformsCache[ 'iGlobalTime' ], parameters.time / 1000 );
+    gl.uniform2f( program.uniformsCache[ 'mouse' ], parameters.mouseX, parameters.mouseY );
+    gl.uniform3f( program.uniformsCache[ 'iResolution' ], parameters.screenWidth, parameters.screenHeight, 0 );
 
-    // Vertex shader from http://glsl.heroku.com/ is slightly odd in that it takes
-    // both uniform position and screen space position. I think I can get rid of this
-    // with a small amount of work.
-    gl.bindBuffer( gl.ARRAY_BUFFER, surface.buffer );
-    gl.vertexAttribPointer( surface.positionAttribute, 2, gl.FLOAT, false, 0, 0 );
+    // Simple vertex shader that just takes 2D position
     gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-    gl.vertexAttribPointer( vertexPosition, 2, gl.FLOAT, false, 0, 0 );
+    gl.vertexAttribPointer( program.vertexPosition, 2, gl.FLOAT, false, 0, 0 );
 
     // Clear the screen, then render a big quad over the whole thing
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
