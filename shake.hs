@@ -11,6 +11,7 @@ import Development.Shake hiding (doesFileExist)
 import Development.Shake.FilePath
 import System.Directory
 import System.Environment hiding (getEnv)
+import Text.PrettyPrint.HughesPJClass (pPrint)
 
 import Assets
 import Language.ECMAScript3.Parser
@@ -30,10 +31,6 @@ silentCommand = command_ [EchoStdout False, EchoStderr False]
 
 showSize file = command_ [] "wc" ["-c", file]
 
-
-clean = do
-    putStrLn "TODO: don't know how to clean"
-    return ()
 
 getFileSize file = do
     need [file]
@@ -159,10 +156,7 @@ main = shakeArgs shakeOptions $ do
         let in_ = dropDirectories 2 $ out
         need [in_]
         content <- readFile' in_
-        writeFile' out $ smash content
-        --copyFile' in_ out
-        --silentCommand "mono"
-            --["deps/shader_minifier.exe", "--preserve-externals", "-o", out, in_]
+        writeFile' out $ minifyShader content
 
     rewrittenJSName "/*.js" *> \out -> do
         let in_ = dropDirectories 2 $ out
@@ -174,12 +168,25 @@ main = shakeArgs shakeOptions $ do
         let code' = rewriteLoadedAssets assetMap code
         writeFile' out $ show . prettyPrint $ code'
 
-smash xs = eatSpaces $ eatNewlines $ xs
-  where
-    eatNewlines = filter (/= '\n')
 
-    eatSpaces (a:' ':c:xs)
-      | not (isIdent a) || not (isIdent c) = eatSpaces (a:c:xs)
-      where isIdent c = isAlphaNum c || c == '_';
-    eatSpaces (x:xs) = x : smash xs
-    eatSpaces [] = []
+minifyShader xs = goSpaces2 $ goNewlines False $ goSpaces $ (unlines . map goComments . lines) $ xs
+  where
+    goComments ('/':'/':xs) = []
+    goComments (x:xs) = x : goComments xs
+    goComments [] = []
+
+    goSpaces (' ':' ':xs) = goSpaces $ ' ':xs
+    goSpaces (x:xs) = x : goSpaces xs
+    goSpaces [] = []
+
+    goNewlines _ ('#':xs) = '\n':'#':goNewlines True xs
+    goNewlines True ('\n':xs) = '\n' : goNewlines False xs
+    goNewlines False ('\n':xs) = goNewlines False xs
+    goNewlines pp (x:xs) = x : goNewlines pp xs
+    goNewlines _ [] = []
+
+    goSpaces2 (a:' ':b:xs)
+      | not (isIdent a) || not (isIdent b) = a : goSpaces2 (b:xs)
+      where isIdent c = isAlphaNum c || c == '_'
+    goSpaces2 (x:xs) = x : goSpaces2 xs
+    goSpaces2 [] = []
