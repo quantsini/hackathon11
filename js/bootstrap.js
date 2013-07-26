@@ -6,7 +6,7 @@
 var assets = [];
 
 getAsset = function(index) {
-    var array = getAssetArray_(index);
+    var array = getAssetArray(index);
     var result = '';
     for (var i = 0; i < array.length; ++i) {
         result += String.fromCharCode(array[i]);
@@ -14,7 +14,7 @@ getAsset = function(index) {
     return result;
 }
 
-var getAssetArray_ = getAssetArray = function(index, type) {
+getAssetArray = function(index, type) {
     return new (type || Uint8Array)(assets[index]);
 }
 
@@ -56,5 +56,7 @@ with (document.body) {
 
     firstChild.style.display = 'none';
 }
+
+eval(getAsset('js/main.js'));
 
 })();

@@ -19,7 +19,7 @@ import Language.ECMAScript3.PrettyPrint
 
 import Debug.Trace
 
-mainJSFile = "js/main.js"
+bootJSFile = "js/bootstrap.js"
 
 pngChannelCount = 3
 
@@ -42,7 +42,7 @@ localAssetFileName x = "build/assetlist/" ++ x ++ ".local-assets"
 
 loadAssetList jsFile = lines <$> readFile' (assetFileName jsFile)
 loadLocalAssetList jsFile = lines <$> readFile' (localAssetFileName jsFile)
-loadMainAssetList = loadAssetList mainJSFile
+loadMainAssetList = loadAssetList bootJSFile
 
 minifiedAssetName f
   | ext `elem` ["js", "glsl", "vert", "frag"] = "build/minified/" ++ f
@@ -92,17 +92,12 @@ main = shakeArgs shakeOptions $ do
         let in_ = "js/loader.js"
         jsContent <- readFile' in_
         blobSize <- getFileSize "build/y.padded.dat" :: Action Int
-        scriptSize <- getFileSize $ "build/code.min.js" :: Action Int
+        scriptSize <- getFileSize $ minifiedAssetName bootJSFile :: Action Int
         let jsContent' =
                 replace "__BLOBSIZE__" (show blobSize) $
                 replace "__PNGWIDTH__" (show $ blobSize `div` pngChannelCount) $
                 replace "__SCRIPTSIZE__" (show scriptSize) $ jsContent
         writeFile' out jsContent'
-
-    "build/code.js" *> \out -> do
-        getAssetCode <- readFile' "js/getasset-packed.js"
-        mainCode <- readFile' $ rewrittenJSName "js/main.js"
-        writeFile' out $ getAssetCode ++ mainCode
 
     "build/y.png" *> \out -> do
         let in_ = "build/y.unopt.png"
@@ -130,7 +125,7 @@ main = shakeArgs shakeOptions $ do
 
     "build/y.dat" *> \out -> do
         ins <- loadMainAssetList
-        let ins' = "build/code.min.js" : map minifiedAssetName ins
+        let ins' = map minifiedAssetName $ bootJSFile : ins
         need ins'
         silentCommand "python" $ ["packer.py", out] ++ ins'
         showSize out
@@ -138,7 +133,7 @@ main = shakeArgs shakeOptions $ do
     assetFileName "/*.js" *> \out -> do
         let jsFile = dropDirectories 2 $ dropExtension out
         jsAssets <- loadLocalAssetList jsFile
-        transitiveAssetLists <- mapM loadAssetList $ filter ((== "js") . takeExtension) jsAssets
+        transitiveAssetLists <- mapM loadAssetList $ filter ((== ".js") . takeExtension) jsAssets
         let fullAssetList = S.unions (S.fromList jsAssets : map S.fromList transitiveAssetLists)
         writeFile' out $ unlines . S.toList $ fullAssetList
 
