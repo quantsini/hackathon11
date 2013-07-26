@@ -1,3 +1,5 @@
+(function() {
+
 // Request Animation Frame shim
 if ( !window.requestAnimationFrame ) {
     window.requestAnimationFrame = ( function() {
@@ -211,3 +213,5 @@ function render() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
     gl.drawArrays( gl.TRIANGLES, 0, 6 );
 }
+
+})();

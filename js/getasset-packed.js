@@ -1,5 +1,21 @@
-function getAsset(index) {
-    return assets[index];
+(function() {
+
+// Input globals:  s (script length), d (PNG-extracted data array)
+// Output globals: getAsset, getAssetArray
+
+var assets = [];
+
+getAsset = function(index) {
+    var array = getAssetArray_(index);
+    var result = '';
+    for (var i = 0; i < array.length; ++i) {
+        result += String.fromCharCode(array[i]);
+    }
+    return result;
+}
+
+var getAssetArray_ = getAssetArray = function(index, type) {
+    return new (type || Uint8Array)(assets[index]);
 }
 
 function getByte(index) {
@@ -11,7 +27,6 @@ function getByte(index) {
 function unpackAssets() {
     var index = s,
         n = 0;
-    assets = [];
 
     while (1) {
         var size = getNum(getByte(index), getByte(index + 1));
@@ -19,9 +34,9 @@ function unpackAssets() {
             break;
         index = index + 2;
 
-        var data = '';
-        for(var i = index; i < index + size; i ++) {
-            data = data + String.fromCharCode(getByte(i));
+        var data = new Uint8Array(size);
+        for(var i = 0; i < size; i ++) {
+            data[i] = getByte(i + index);
         }
         assets.push(data);
         index = index + size;
@@ -41,3 +56,5 @@ with (document.body) {
 
     firstChild.style.display = 'none';
 }
+
+})();
