@@ -1,19 +1,17 @@
 #ifdef GL_ES
 precision mediump float;
 #endif
-#define dplimit 0.95105651629
-#define sinlimit 0.30901699437
-#define rotateStep 1.25663706144
 
 uniform float iGlobalTime; // shader playback time (in seconds)
 uniform vec3 iResolution;
 
-vec3 cStroke = vec3(1,1,1);
-vec3 cYelp = vec3(0,0,0);
-vec3 cBurst = vec3(0.76,0.07,0);
-float strokeW = 0.05;
+#define rS 1.25663706144
+vec3 cS = vec3(1,1,1);
+vec3 cY = vec3(0,0,0);
+vec3 cB = vec3(0.76,0.07,0);
+float sW = 0.05;
 float lw = 0.03;
-vec2 rotate(vec2 p, float a) {
+vec2 r(vec2 p, float a) {
     return vec2(p.x * cos(a) - p.y * sin(a), p.x * sin(a) + p.y * cos(a));
 }
 float lspd(vec2 v, vec2 w, vec2 p) {
@@ -91,21 +89,21 @@ void yelp(inout vec3 col, vec2 uv) {
     e = lettere(uv-vec2(0,0.2*max(0.0,sin(T+0.4))));
     l = letterl(uv-vec2(0,0.2*max(0.0,sin(T+0.7))));
     p = letterp(uv-vec2(0,0.2*max(0.0,sin(T+1.3))));
-    v = burstb(rotate(uv-center,init));
+    v = burstb(r(uv-center,init));
     for(int i=1; i<=4; i++) {
-        v = min(v, burstn(rotate(uv-center, rotateStep*float(i)+init)));
+        v = min(v, burstn(r(uv-center, rS*float(i)+init)));
     }
-    col = mix(col, cStroke, aa(y - strokeW));
-    col = mix(col, cStroke, aa(e - strokeW));
-    col = mix(col, cStroke, aa(l - strokeW));
-    col = mix(col, cStroke, aa(p - strokeW));
-    col = mix(col, cStroke, aa(v - strokeW));
-    col = mix(col, cStroke, aa(length(uv-center)-0.1));
-    col = mix(col, cYelp, aa(y));
-    col = mix(col, cYelp, aa(e));
-    col = mix(col, cYelp, aa(l));
-    col = mix(col, cYelp, aa(p));
-    col = mix(col, cBurst, aa(v));
+    col = mix(col, cS, aa(y - sW));
+    col = mix(col, cS, aa(e - sW));
+    col = mix(col, cS, aa(l - sW));
+    col = mix(col, cS, aa(p - sW));
+    col = mix(col, cS, aa(v - sW));
+    col = mix(col, cS, aa(length(uv-center)-0.1));
+    col = mix(col, cY, aa(y));
+    col = mix(col, cY, aa(e));
+    col = mix(col, cY, aa(l));
+    col = mix(col, cY, aa(p));
+    col = mix(col, cB, aa(v));
 }
 void main(void) {
     vec2 uv = gl_FragCoord.xy / iResolution.y;
