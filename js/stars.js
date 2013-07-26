@@ -4,7 +4,8 @@ var canvas, gl, parameters, buffer;
 
 var NUM_POINTS = 20000;
 
-var lines = "/yelp/4k demo/by/cpaul/hbai/klange/mgrounds/spernste/[BURST]".split('/');
+var lines = "/yelp\nhackathon/4k\nwebgl\ndemo/by:\ncpaul\nhbai/klange\nmgrounds\nspernste/in only\n3961\nbytes/[BURST]".split('/');
+//var lines = "/mgrounds/spernste/[BURST]".split('/');
 var burstIndex = lines.length - 1;
 var quats = [];
 var lineTexs = [];
@@ -75,12 +76,17 @@ function renderText(text) {
 
     var ctx = texCanvas.getContext('2d');
     
-    ctx.font = "48px monospace";
+    ctx.font = "36px monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     var metrics = ctx.measureText(text);
 
-    ctx.fillText(text, 128,  128);
+    var lines = text.split('\n');
+    var lineHeight = 40;
+    var topY = (256 - lineHeight * (lines.length - 1)) / 2;
+    for (var i = 0; i < lines.length; ++i) {
+        ctx.fillText(lines[i], 128,  topY + lineHeight * i);
+    }
 
     return makeTexture(texCanvas);
 }
