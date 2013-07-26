@@ -1,19 +1,17 @@
 #ifdef GL_ES
 precision mediump float;
 #endif
-#define dplimit 0.95105651629
-#define sinlimit 0.30901699437
-#define rotateStep 1.25663706144
 
 uniform float iGlobalTime; // shader playback time (in seconds)
 uniform vec3 iResolution;
 
-vec3 cStroke = vec3(1,1,1);
-vec3 cYelp = vec3(0,0,0);
-vec3 cBurst = vec3(0.76,0.07,0);
-float strokeW = 0.05;
+#define rS 1.25663706144
+vec4 cS = vec4(1,1,1,1);
+vec4 cY = vec4(0,0,0,1);
+vec4 cB = vec4(0.76,0.07,0,1);
+float sW = 0.05;
 float lw = 0.03;
-vec2 rotate(vec2 p, float a) {
+vec2 r(vec2 p, float a) {
     return vec2(p.x * cos(a) - p.y * sin(a), p.x * sin(a) + p.y * cos(a));
 }
 float lspd(vec2 v, vec2 w, vec2 p) {
@@ -82,36 +80,37 @@ float letterp(vec2 p) {
     return u;
 }
 float aa(float v){return smoothstep(1.5/iResolution.y,0.0,v);}
-void yelp(inout vec3 col, vec2 uv) {
+void yelp(inout vec4 col, vec2 uv) {
     float y,e,l,p,v;
-    y = lettery(uv);
-    e = lettere(uv);
-    l = letterl(uv);
-    p = letterp(uv);
-    col = mix(col, cStroke, aa(y - strokeW));
-    col = mix(col, cStroke, aa(e - strokeW));
-    col = mix(col, cStroke, aa(l - strokeW));
-    col = mix(col, cStroke, aa(p - strokeW));
-    col = mix(col, cYelp, aa(y));
-    col = mix(col, cYelp, aa(e));
-    col = mix(col, cYelp, aa(l));
-    col = mix(col, cYelp, aa(p));
     vec2 center = vec2(1.00, 0.37);
-    float init = 1.3;
-    v = burstb(rotate(uv-center,init));
+    float T = iGlobalTime*2.0;
+    float init = 1.3 +  0.5 * sin(T);
+    y = lettery(uv-vec2(0,0.2*max(0.0,sin(T))));
+    e = lettere(uv-vec2(0,0.2*max(0.0,sin(T+0.4))));
+    l = letterl(uv-vec2(0,0.2*max(0.0,sin(T+0.7))));
+    p = letterp(uv-vec2(0,0.2*max(0.0,sin(T+1.3))));
+    v = burstb(r(uv-center,init));
     for(int i=1; i<=4; i++) {
-        v = min(v, burstn(rotate(uv-center, rotateStep*float(i)+init)));
+        v = min(v, burstn(r(uv-center, rS*float(i)+init)));
     }
-    col = mix(col, cStroke, aa(v - strokeW));
-    col = mix(col, cStroke, aa(length(uv-center)-0.1));
-    col = mix(col, cBurst, aa(v));
+    col = mix(col, cS, aa(y - sW));
+    col = mix(col, cS, aa(e - sW));
+    col = mix(col, cS, aa(l - sW));
+    col = mix(col, cS, aa(p - sW));
+    col = mix(col, cS, aa(v - sW));
+    col = mix(col, cS, aa(length(uv-center)-0.1));
+    col = mix(col, cY, aa(y));
+    col = mix(col, cY, aa(e));
+    col = mix(col, cY, aa(l));
+    col = mix(col, cY, aa(p));
+    col = mix(col, cB, aa(v));
 }
 void main(void) {
     vec2 uv = gl_FragCoord.xy / iResolution.y;
     float ratio = iResolution.x / iResolution.y;
     uv.x += 0.5 - ratio / 2.0;
     uv.y -= 0.07;
-    vec3 col = mix(vec3(0.391,0.07,0.0), vec3(0.844,0.07,0.0), 1.0 - uv.x * 0.6);
+    vec4 col = vec4(0.0,0.0,0.0,0.0);
     yelp(col, uv);
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = col;
 }
