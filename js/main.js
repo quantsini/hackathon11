@@ -11,9 +11,8 @@ if ( !window.requestAnimationFrame ) {
     } )();
 }
 
-var canvas, gl, buffer, currentProgram, loadingProgram,
+var canvas, gl, buffer, shaderPrograms = [], sectionTimings=[], currentSection=0, loadingProgram,
 parameters = { startTime: Date.now(), time: 0, mouseX: 0.5, mouseY: 0.5, screenWidth: 0, screenHeight: 0 },
-surface = { centerX: 0, centerY: 0, width: 1, height: 1, lastX: 0, lastY: 0 },
 frontTarget, backTarget, screenProgram, getWebGL, loadingInProgress = true, loadingTime = 0.0, loadingPhase=0;
 
 init();
@@ -36,16 +35,16 @@ function init() {
         buffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
         gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( [ - 1.0, - 1.0, 1.0, - 1.0, - 1.0, 1.0, 1.0, - 1.0, 1.0, 1.0, - 1.0, 1.0 ] ), gl.STATIC_DRAW );
-
-        // Create surface buffer (coordinates at screen corners)
-        surface.buffer = gl.createBuffer();
     }
 
-	var loading_fragment = getAsset("shaders/loading.frag")
-    var demo_fragment = getAsset("shaders/demo.frag");
     var demo_vertex = getAsset("shaders/demo.vert");
-    currentProgram = compileProg(demo_fragment, demo_vertex);
-    loadingProgram = compileProg(loading_fragment, demo_vertex);
+
+    shaderPrograms.push(compileProg(getAsset("shaders/demo.frag"), demo_vertex));
+	sectionTimings.push(5.0);
+    shaderPrograms.push(compileProg(getAsset("shaders/ticktock.frag"), demo_vertex));
+	sectionTimings.push(10.0);
+
+    loadingProgram = compileProg(getAsset("shaders/loading.frag"), demo_vertex);
 
     document.addEventListener( 'mousemove', function ( event ) {
         parameters.mouseX = event.clientX / window.innerWidth;
@@ -88,23 +87,6 @@ function loadingFunction() {
 		break;
 	}
 	loadingPhase++;	
-}
-
-function computeSurfaceCorners() {
-    if (gl) {
-        surface.width = surface.height * parameters.screenWidth / parameters.screenHeight;
-        
-        var halfWidth = surface.width * 0.5, halfHeight = surface.height * 0.5;
-        
-        gl.bindBuffer( gl.ARRAY_BUFFER, surface.buffer );
-        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( [
-            surface.centerX - halfWidth, surface.centerY - halfHeight,
-            surface.centerX + halfWidth, surface.centerY - halfHeight,
-            surface.centerX - halfWidth, surface.centerY + halfHeight,
-            surface.centerX + halfWidth, surface.centerY - halfHeight,
-            surface.centerX + halfWidth, surface.centerY + halfHeight,
-            surface.centerX - halfWidth, surface.centerY + halfHeight ] ), gl.STATIC_DRAW );
-    }
 }
 
 function compileProg(fragment, vertex) {
@@ -174,8 +156,6 @@ function onWindowResize( event ) {
     parameters.screenWidth = canvas.width;
     parameters.screenHeight = canvas.height;
 
-    computeSurfaceCorners();
-
     if (gl) { gl.viewport( 0, 0, canvas.width, canvas.height );}
 }
 
@@ -197,8 +177,19 @@ function render() {
 	}
 	else
 	{
-		program = currentProgram;
     	parameters.time = Date.now() - parameters.startTime;
+		if(parameters.time / 1000.0 > sectionTimings[currentSection])
+		{
+			currentSection++;
+			if(currentSection == sectionTimings.length)
+			{
+				// Loop the sections and reset time
+				currentSection = 0;
+				parameters.time = 0;
+				parameters.startTime = Date.now();
+			}
+		}
+		program = shaderPrograms[currentSection];
 	}
 
     if ( !program ) return;
@@ -212,11 +203,7 @@ function render() {
     gl.uniform2f( program.uniformsCache[ 'mouse' ], parameters.mouseX, parameters.mouseY );
     gl.uniform3f( program.uniformsCache[ 'iResolution' ], parameters.screenWidth, parameters.screenHeight, 0 );
 
-    // Vertex shader from http://glsl.heroku.com/ is slightly odd in that it takes
-    // both uniform position and screen space position. I think I can get rid of this
-    // with a small amount of work.
-    gl.bindBuffer( gl.ARRAY_BUFFER, surface.buffer );
-    gl.vertexAttribPointer( surface.positionAttribute, 2, gl.FLOAT, false, 0, 0 );
+    // Simple vertex shader that just takes 2D position
     gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
     gl.vertexAttribPointer( program.vertexPosition, 2, gl.FLOAT, false, 0, 0 );
 
