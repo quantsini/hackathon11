@@ -92,10 +92,12 @@ main = shakeArgs shakeOptions $ do
         jsContent <- readFile' in_
         blobSize <- getFileSize "build/y.padded.dat" :: Action Int
         scriptSize <- getFileSize $ minifiedAssetName bootJSFile :: Action Int
+        let scriptPngSize = scriptSize `div` 3 * 4 + scriptSize `mod` 3
         let jsContent' =
                 replace "__BLOBSIZE__" (show blobSize) $
                 replace "__PNGWIDTH__" (show $ blobSize `div` pngChannelCount) $
-                replace "__SCRIPTSIZE__" (show scriptSize) $ jsContent
+                replace "__SCRIPTSIZE__" (show scriptSize) $
+                replace "__SCRIPT_PNGSIZE__" (show scriptPngSize) $ jsContent
         writeFile' out jsContent'
 
     "build/y.png" *> \out -> do

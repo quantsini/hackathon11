@@ -18,12 +18,13 @@ def main():
 
     main_js = load(main_js_file)
     assets = [load(f) for f in asset_files]
+    trailer = '*/'
+
+    content = '/*'.join([main_js] + assets + [trailer])
 
     with open(out_file, 'w') as f:
-        f.write(main_js)
-        for asset in assets:
-            f.write(struct.pack('<H', len(asset)))
-            f.write(asset)
+        f.write(content)
+        f.write(' ' * ((3 - len(content)) % 3))
 
 if __name__ == '__main__':
     main()
