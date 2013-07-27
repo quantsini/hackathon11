@@ -9,7 +9,7 @@ Setup
 
 Install the necessary Debian packages:
 
-    sudo apt-get install ghc cabal-install optipng pngtools
+    sudo apt-get install ghc cabal-install pngcrush
 
 Install the necessary Haskell packages:
 
