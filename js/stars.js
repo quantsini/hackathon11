@@ -1,85 +1,70 @@
 (function() {
 
-var canvas, gl, parameters, buffer;
-
 var NUM_POINTS = 20000;
 
-var lines = "/yelp\nhackathon/4k\nwebgl\ndemo/by:\ncpaul\nhbai/klange\nmgrounds\nspernste/in only\n3961\nbytes/[BURST]".split('/');
-//var lines = "/mgrounds/spernste/[BURST]".split('/');
-var burstIndex = lines.length - 1;
+var lines = '/yelp\nhackathon/"4k"\nwebgl\ndemo/by:\ncpaul\nhbai/klange\nmgrounds\nspernste/in only\n4294\nbytes/[BURST]'.split('/');
+var numLines = lines.length;
+var burstIndex = numLines - 1;
 var quats = [];
 var lineTexs = [];
 
-function init() {
-    canvas = document.createElement( 'canvas' );
-    document.body.appendChild( canvas );
+var create = document.createElement.bind(document);
 
-    gl = canvas.getContext( 'experimental-webgl', { preserveDrawingBuffer: true } );
-
-    with (canvas) {
-        width = style.width = document.innerHeight;
-        height = style.height = document.innerHeight;
-        gl.viewport(0, 0, width, height);
-    }
-
-    // Create vertex buffer (2 triangles)
-    buffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-    var z1 = -0.1;
-    var z2 = 0.1;
-    var points = [];
-    for (var i = 0; i < NUM_POINTS; ++i) {
-        var x = 99;
-        var y = 99;
-        var z = 99;
-        while (x*x + y*y + z*z > 1) {
-            x = Math.random() * 2 - 1;
-            y = Math.random() * 2 - 1;
-            z = Math.random() * 2 - 1;
-        }
-
-        points.push(x);
-        points.push(y);
-        points.push(z);
-    }
-    gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(points),gl.STATIC_DRAW);
-
-    for (var i = 0; i < lines.length; ++i) {
-        var x = Math.random() * 2 - 1;
-        var y = Math.random() * 2 - 1;
-        var z = Math.random() * 2 - 1;
-        var w = Math.random() * 2 - 1;
-        quats.push({x:x,y:y,z:z,w:w});
-
-        lineTexs.push(renderText(lines[i]));
-    }
-
-    //gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-
-    parameters = { startTime: Date.now(), time: 0, screenWidth: 0, screenHeight: 0 }
+function makeContext(show) {
+    var canvas = create('canvas');
+    if (show)
+        document.body.appendChild(canvas);
+    var gl = canvas.getContext( 'experimental-webgl', { preserveDrawingBuffer: true } );
+    return {c:canvas, g:gl};
 }
 
-function renderText(text) {
-    function getPowerOfTwo(value, pow) {
-        var pow = pow || 1;
-        while(pow<value) {
-            pow *= 2;
-        }
-        return pow;
-    }
+function initStars() {
+    with(stars.g) {
+        // Create vertex buffer (2 triangles)
+        var buffer = createBuffer();
+        bindBuffer(ARRAY_BUFFER, buffer);
 
-    var texCanvas = document.createElement('canvas');
+        var points = [];
+        for (var i = 0; i < NUM_POINTS; ++i) {
+            var x = 99;
+            var y = 99;
+            var z = 99;
+            while (x*x + y*y + z*z > 1) {
+                x = Math.random() * 2 - 1;
+                y = Math.random() * 2 - 1;
+                z = Math.random() * 2 - 1;
+            }
+
+            points.push(x);
+            points.push(y);
+            points.push(z);
+        }
+        bufferData(ARRAY_BUFFER, new Float32Array(points), STATIC_DRAW);
+
+        for (var i = 0; i < lines.length; ++i) {
+            var x = Math.random() * 2 - 1;
+            var y = Math.random() * 2 - 1;
+            var z = Math.random() * 2 - 1;
+            var w = Math.random() * 2 - 1;
+            quats.push({x:x,y:y,z:z,w:w});
+
+            lineTexs.push(renderText(stars.g, lines[i]));
+        }
+
+        enable(BLEND);
+        blendFunc(SRC_ALPHA, ONE);
+    }
+}
+
+function renderText(gl, text) {
+    var texCanvas = create('canvas');
     texCanvas.width = 256;
     texCanvas.height = 256;
 
     var ctx = texCanvas.getContext('2d');
-    
     ctx.font = "36px monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    var metrics = ctx.measureText(text);
 
     var lines = text.split('\n');
     var lineHeight = 40;
@@ -88,20 +73,29 @@ function renderText(text) {
         ctx.fillText(lines[i], 128,  topY + lineHeight * i);
     }
 
-    return makeTexture(texCanvas);
+    return makeTexture(gl, texCanvas);
 }
 
-function makeTexture(img) {
+function updateTexture(gl, texName, img) {
+    with (gl) {
+        bindTexture(TEXTURE_2D, texName);
+        pixelStorei(UNPACK_FLIP_Y_WEBGL, true);
+        texImage2D(TEXTURE_2D, 0, RGBA, RGBA, UNSIGNED_BYTE, img);
+    }
+}
+
+function makeTexture(gl, img) {
     var texName;
 
     with(gl) {
         texName = createTexture();
-        bindTexture(TEXTURE_2D, texName);
-        pixelStorei(UNPACK_FLIP_Y_WEBGL, true);
-        texImage2D(TEXTURE_2D, 0, RGBA, RGBA, UNSIGNED_BYTE, img);
+        updateTexture(gl, texName, img);
 
         texParameteri(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
         texParameteri(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
+
+        texParameteri(TEXTURE_2D, TEXTURE_WRAP_S, CLAMP_TO_EDGE);
+        texParameteri(TEXTURE_2D, TEXTURE_WRAP_T, CLAMP_TO_EDGE);
 
         bindTexture(TEXTURE_2D, null);
     }
@@ -109,136 +103,138 @@ function makeTexture(img) {
     return texName;
 }
 
-function onWindowResize( event ) {
-    var quality = 1; // increase for more pixellated but faster rendering
-    canvas.width = window.innerHeight / quality;
-    canvas.height = window.innerHeight / quality;
-
-    canvas.style.width = window.innerHeight + 'px';
-    canvas.style.height = window.innerHeight + 'px';
-
-    parameters.screenWidth = canvas.height;
-    parameters.screenHeight = canvas.height;
-
-    gl.viewport( 0, 0, canvas.height, canvas.height );
+function onWindowResize() {
+    function go(info) {
+        var size = window.innerHeight;
+        with (info.c) {
+            style.width = style.height = (width = height = size) + 'px';
+            style.display = 'block';
+            style.margin = 'auto';
+        }
+        info.g.viewport(0, 0, size, size);
+    }
+    go(stars);
+    go(filter);
 }
 
-function compileProg(vertex, fragment) {
+function compileProg(gl, vertex, fragment) {
     with (gl) {
         var program = createProgram();
 
         function createShader_(src, type) {
-            var shader = createShader( type );
-            var line, lineNum, lineError, index = 0, indexEnd;
-
-            shaderSource( shader, src );
-            compileShader( shader );
-
-            if ( !getShaderParameter( shader, gl.COMPILE_STATUS ) ) {
-                var error = getShaderInfoLog( shader );
-                console.error( error );
-                return null;
-            }
+            var shader = createShader(type);
+            shaderSource(shader, src);
+            compileShader(shader);
             return shader;
         }
 
-        var vs = createShader_( vertex, VERTEX_SHADER );
-        var fs = createShader_( fragment, FRAGMENT_SHADER );
+        var vs = createShader_(vertex, VERTEX_SHADER);
+        var fs = createShader_(fragment, FRAGMENT_SHADER);
 
-        if ( vs == null || fs == null ) return null;
+        attachShader(program, vs);
+        attachShader(program, fs);
 
-        attachShader( program, vs );
-        attachShader( program, fs );
+        deleteShader(vs);
+        deleteShader(fs);
 
-        deleteShader( vs );
-        deleteShader( fs );
-
-        linkProgram( program );
-
-        if ( !getProgramParameter( program, LINK_STATUS ) ) {
-            var error = getProgramInfoLog( program );
-            console.error( error );
-            console.error( 'VALIDATE_STATUS: ' + getProgramParameter( program, VALIDATE_STATUS ), 'ERROR: ' + getError() );
-            return;
-        }
-
-        // Cache uniforms
-        program.uniformsCache = {};
-        var uniformNames = ['iGlobalTime', 'mouse', 'iResolution', 'rotateInterp', 'rotateFrom', 'rotateTo'];
-        for(var i = 0; i < uniformNames.length; i++)
-        {
-            var name = uniformNames[i];
-            program.uniformsCache[ name ] = getUniformLocation( program, name );
-        }
-
-        // Set up buffers
-        program.vertexPosition = getAttribLocation(program, "position");
+        linkProgram(program);
 
         return program;
     }
 }
 
 function animate() {
-    parameters.time = Date.now();
-    render();
-    requestAnimationFrame( animate );
+    renderStars(Date.now() - startTime);
+    renderFilter();
+    requestAnimationFrame(animate);
 }
 
-var yelpTex;
-var rocksTex;
+function glPrepare(gl, program) {
+    with (gl) {
+        // Use our shader program
+        var vertAttr = getAttribLocation(program, "position");
+        enableVertexAttribArray(vertAttr);
+        useProgram(program);
+        clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
 
-function render() {
-    var program = starShader;
-
-    var delta = parameters.time - parameters.startTime;
-    var base = Math.floor(delta / 2000) + lines.length - 1;
-
-    // Use our shader program
-	gl.enableVertexAttribArray( program.vertexPosition );
-    gl.useProgram( program );
-
-    function handle(uniform, idx) {
-        gl.activeTexture(gl.TEXTURE0 + idx);
-        gl.bindTexture(gl.TEXTURE_2D, lineTexs[(base + idx) % lines.length]);
-        gl.uniform1i(gl.getUniformLocation(program, "samp" + uniform), idx);
-
-        var q = quats[(base + idx) % lines.length];
-        gl.uniform4f(gl.getUniformLocation(program, "rotate" + uniform), q.x, q.y, q.z, q.w);
+        vertexAttribPointer(vertAttr, 3, FLOAT, false, 0, 0);
     }
+}
 
-    "Old,From,To,New".split(',').map(handle);
-    var burstness = (base - burstIndex + 2 + lines.length) % lines.length;
-    gl.uniform1i(gl.getUniformLocation(program, "burstness"), burstness);
+function renderStars(delta) {
+    var program = starShader;
+    with (stars.g) {
+        var base = Math.floor(delta / 3000) + numLines - 1;
+        useProgram(program);
 
-    // Update the uniforms
-    gl.uniform1f( program.uniformsCache[ 'iGlobalTime' ], delta / 1000 );
-    gl.uniform2f( program.uniformsCache[ 'mouse' ], parameters.mouseX, parameters.mouseY );
-    gl.uniform3f( program.uniformsCache[ 'iResolution' ], parameters.screenWidth, parameters.screenHeight, 0 );
+        function handle(uniform, idx) {
+            activeTexture(TEXTURE0 + idx);
+            bindTexture(TEXTURE_2D, lineTexs[(base + idx) % numLines]);
+            uniform1i(getUniformLocation(program, "samp" + uniform), idx);
 
-    gl.uniform1f( gl.getUniformLocation(program, 'interp'), delta / 1000 % 2);
+            var q = quats[(base + idx) % numLines];
+            uniform4f(getUniformLocation(program, "rotate" + uniform), q.x, q.y, q.z, q.w);
+        }
 
-    // Simple vertex shader that just takes 2D position
-    gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-    gl.vertexAttribPointer( program.vertexPosition, 3, gl.FLOAT, false, 0, 0 );
+        "Old,From,To,New".split(',').map(handle);
+        var burstness = (base - burstIndex + 2 + numLines) % numLines;
+        uniform1i(getUniformLocation(program, "burstness"), burstness);
 
-    // Clear the screen, then render a big quad over the whole thing
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-    gl.drawArrays( gl.POINTS, 0, NUM_POINTS );
+        uniform3f(getUniformLocation(program, 'iResolution'), stars.c.width, stars.c.height, 0);
+        uniform1f(getUniformLocation(program, 'interp'), delta / 1500 % 2);
+
+        glPrepare(stars.g, program);
+        drawArrays(POINTS, 0, NUM_POINTS);
+    }
 }
 
 
-init();
-var starShader = compileProg(getAsset('shaders/stars.vert'), getAsset('shaders/stars.frag'));
+function initFilter() {
+    with (filter.g) {
+        var buffer = createBuffer();
+        bindBuffer( ARRAY_BUFFER, buffer );
+        var points = [-1,-1,0, 1,-1,0, -1,1,0, 1,-1,0, 1,1,0, -1,1,0];
+        bufferData( ARRAY_BUFFER, new Float32Array(points), STATIC_DRAW );
+    }
+}
+
+function renderFilter() {
+    updateTexture(filter.g, filterTexName, stars.c);
+    var program = filterShader;
+    with (filter.g) {
+        useProgram(program);
+        activeTexture(TEXTURE0);
+        bindTexture(TEXTURE_2D, filterTexName);
+        uniform1i(getUniformLocation(program, "iChannel0"), 0);
+        uniform3f(getUniformLocation(program, 'iResolution'), filter.c.width, filter.c.height, 0);
+        glPrepare(filter.g, program);
+        drawArrays(TRIANGLES, 0, 6);
+    }
+}
+
+var stars = makeContext(0);
+var starShader =
+    compileProg(stars.g, getAsset('shaders/stars.vert'), getAsset('shaders/stars.frag'));
+
+var filter = makeContext(1);
+var filterTexName = makeTexture(filter.g, stars.c);
+var filterShader =
+    compileProg(filter.g, getAsset('shaders/demo.vert'), getAsset('shaders/filter.frag'));
+
+var startTime = Date.now();
+
+initStars(stars.g);
+initFilter(filter.g);
 
 onWindowResize();
-window.addEventListener( 'resize', onWindowResize, false );
+window.addEventListener('resize', onWindowResize, false);
 animate();
 
 var img = document.createElement('img');
 img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(getAsset('img/yelp.svg')));
 img.style.display = 'none';
-img.onload = function() {
-    lineTexs[burstIndex] = makeTexture(img); console.log('image loaded'); };
-document.body.appendChild(img);
+img.onload = function() { lineTexs[burstIndex] = makeTexture(stars.g, img); };
+
+document.body.style.backgroundColor = '#000';
 
 })();
