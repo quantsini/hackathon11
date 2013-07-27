@@ -11,7 +11,6 @@ import Development.Shake hiding (doesFileExist)
 import Development.Shake.FilePath
 import System.Directory
 import System.Environment hiding (getEnv)
-import Text.PrettyPrint.HughesPJClass (pPrint)
 
 import Assets
 import Language.ECMAScript3.Parser
