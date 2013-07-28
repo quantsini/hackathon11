@@ -8,7 +8,6 @@ getAsset = function(index) {
 }
 
 var assets = s.split('/*').slice(2);
-console.log(assets.length, 'assets');
 
 with (document.body) {
     while (c = firstChild)

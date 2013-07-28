@@ -2,7 +2,7 @@
 
 var NUM_POINTS = 20000;
 
-var lines = '/yelp\nhackathon/"4k"\nwebgl\ndemo/by:\ncpaul\nhbai/klange\nmgrounds\nspernste/in only\n4294\nbytes/[BURST]'.split('/');
+var lines = '/yelp\nhackathon/4k\nwebgl\ndemo/by:\ncpaul\nhbai/klange\nmgrounds\nspernste/in only\n3945\nbytes/[BURST]'.split('/');
 var numLines = lines.length;
 var burstIndex = numLines - 1;
 var quats = [];
@@ -14,7 +14,9 @@ function makeContext(show) {
     var canvas = create('canvas');
     if (show)
         document.body.appendChild(canvas);
-    var gl = canvas.getContext( 'experimental-webgl', { preserveDrawingBuffer: true } );
+    var gl = canvas.getContext( 'experimental-webgl', { preserveDrawingBuffer: true } );;
+    canvas.width = canvas.height = 512;
+    gl.viewport(0, 0, 512, 512);
     return {c:canvas, g:gl};
 }
 
@@ -104,17 +106,12 @@ function makeTexture(gl, img) {
 }
 
 function onWindowResize() {
-    function go(info) {
-        var size = window.innerHeight;
-        with (info.c) {
-            style.width = style.height = (width = height = size) + 'px';
-            style.display = 'block';
-            style.margin = 'auto';
-        }
-        info.g.viewport(0, 0, size, size);
+    var size = window.innerHeight;
+    with (filter.c.style) {
+        width = height = size + 'px';
+        display = 'block';
+        margin = 'auto';
     }
-    go(stars);
-    go(filter);
 }
 
 function compileProg(gl, vertex, fragment) {
