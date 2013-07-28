@@ -12,8 +12,11 @@ var assets = s.split('/*').slice(2);
 with (document.body) {
     while (c = firstChild)
         removeChild(c);
-    style.margin = 0;
-    style.padding = 0;
+    with (style) {
+        margin = 0;
+        padding = 0;
+        backgroundColor = '#000';
+    }
 }
 
 //eval(getAsset('js/main.js'));

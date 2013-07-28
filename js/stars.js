@@ -3,6 +3,7 @@
 var NUM_POINTS = 20000;
 
 var lines = '/yelp\nhackathon/4k\nwebgl\ndemo/by:\ncpaul\nhbai/klange\nmgrounds\nspernste/in only\n3945\nbytes/[BURST]'.split('/');
+//var lines = '/in only\n3945\nbytes/[BURST]'.split('/');
 var numLines = lines.length;
 var burstIndex = numLines - 1;
 var quats = [];
@@ -227,11 +228,26 @@ onWindowResize();
 window.addEventListener('resize', onWindowResize, false);
 animate();
 
-var img = document.createElement('img');
-img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(getAsset('img/yelp.svg')));
-img.style.display = 'none';
-img.onload = function() { lineTexs[burstIndex] = makeTexture(stars.g, img); };
+(function() {
+    var packed, curX, curY, center, get, out, i, offset, img;
+    center = curX = curY = (126 - 32) / 2 + 2;
+    packed = getAsset('build/burst.dat');
+    get = packed.charCodeAt.bind(packed);
 
-document.body.style.backgroundColor = '#000';
+    var NUM_POINTS = 18 * 5;    // will be inlined
+
+    out = '';
+    for (i = 0; i < NUM_POINTS;) {
+        curX += get(i) - center;
+        curY += get(i + NUM_POINTS) - center;
+        out += 'MC  S'.charAt(offset = i++ % 18) + ' ' + curX + ',' + curY + (offset - 17 ? '' : 'Z');
+    }
+
+    img = create('img');
+    img.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(
+            '<svg width="160" height="160" xmlns="http://www.w3.org/2000/svg">' +
+            '<path d="' + out + '" /></svg>'));
+    img.onload = function() { lineTexs[burstIndex] = makeTexture(stars.g, img); };
+})();
 
 })();

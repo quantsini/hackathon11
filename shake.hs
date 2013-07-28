@@ -137,6 +137,11 @@ main = shakeArgs shakeOptions $ do
         silentCommand "python" $ ["packer.py", out] ++ ins'
         showSize out
 
+    "build/burst.dat" *> \out -> do
+        let in_ = "img/burst.svg"
+        need [in_, "extractpaths.py"]
+        silentCommand "python" ["extractpaths.py", in_, out]
+
     assetFileName "/*.js" *> \out -> do
         let jsFile = dropDirectories 2 $ dropExtension out
         jsAssets <- loadLocalAssetList jsFile
